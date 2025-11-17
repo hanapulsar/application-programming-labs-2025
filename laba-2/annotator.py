@@ -13,8 +13,6 @@ def create_annotation(annotation_path: str, absolute_paths: list[str]) -> None:
         with open(annotation_path, mode='w', newline='', encoding='utf-8') as file:
             writer = csv.writer(file)
 
-            writer.writerow(["Absolute path", "Relative path"])
-
             for path in absolute_paths:
                 relative_path = os.path.relpath(path)
                 writer.writerow([path, relative_path])
