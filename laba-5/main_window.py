@@ -17,9 +17,10 @@ class MainWindow(QMainWindow):
         self.iterator = None
         self.current_pixmap = None
 
-        self.DEFAULT_LABEL_TEXT = "Выберите файл аннотации, чтобы начать"
+        self.zoom_factor = 1.0
+        self.ZOOM_STEP = 1.25
 
-        self.image_label = QLabel(self.DEFAULT_LABEL_TEXT, self)
+        self.image_label = QLabel("", self)
         self.image_label.setAlignment(Qt.AlignCenter)
         size_policy = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.image_label.setSizePolicy(size_policy)
@@ -52,7 +53,7 @@ class MainWindow(QMainWindow):
                 self.iterator = ImageIterator(filepath)
                 self.next_button.setEnabled(True)
                 self.current_pixmap = None
-                self.image_label.setText("Файл загружен. Нажмите 'Следующее изображение'")
+                self.update_image_display()
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить итератор: {e}")
 
@@ -69,9 +70,9 @@ class MainWindow(QMainWindow):
             self.update_image_display()
 
         except StopIteration:
-            self.image_label.setText("Изображения закончились! Выберите новый файл.")
             self.next_button.setEnabled(False)
             self.current_pixmap = None
+            self.update_image_display()
             QMessageBox.information(self, "Завершено", "Вы просмотрели все изображения.")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить изображение: {e}")
@@ -90,11 +91,11 @@ class MainWindow(QMainWindow):
         else:
             self.image_label.clear()
             if self.iterator and self.next_button.isEnabled():
-                self.image_label.setText("Нажмите 'Следующее изображение'.")
+                self.image_label.setText("Файл загружен. Нажмите 'Следующее изображение'")
             elif self.iterator and not self.next_button.isEnabled():
                 self.image_label.setText("Изображения закончились! Выберите новый файл.")
             else:
-                self.image_label.setText(self.DEFAULT_LABEL_TEXT)
+                self.image_label.setText("Выберите файл аннотации, чтобы начать")
 
     def resizeEvent(self, event: QResizeEvent):
         """
