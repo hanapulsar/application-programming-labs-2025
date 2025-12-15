@@ -1,7 +1,7 @@
 import sys
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QMessageBox
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton, QLabel, QFileDialog, QMessageBox, QSizePolicy
+from PyQt5.QtGui import QPixmap, QResizeEvent
 from PyQt5.QtCore import Qt
 
 from iterator import ImageIterator
@@ -15,15 +15,22 @@ class MainWindow(QMainWindow):
         self.resize(800, 600)
 
         self.iterator = None
+        self.current_pixmap = None
 
-        self.image_label = QLabel("Выберите файл аннотации, чтобы начать", self)
+        self.DEFAULT_LABEL_TEXT = "Выберите файл аннотации, чтобы начать"
+
+        self.image_label = QLabel(self.DEFAULT_LABEL_TEXT, self)
         self.image_label.setAlignment(Qt.AlignCenter)
+        size_policy = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        self.image_label.setSizePolicy(size_policy)
+
         self.open_button = QPushButton("Выбрать файл аннотации (.csv)", self)
+
         self.next_button = QPushButton("Следующее изображение", self)
         self.next_button.setEnabled(False)
 
         layout = QVBoxLayout()
-        layout.addWidget(self.image_label)
+        layout.addWidget(self.image_label, 1)
         layout.addWidget(self.open_button)
         layout.addWidget(self.next_button)
 
@@ -35,34 +42,66 @@ class MainWindow(QMainWindow):
         self.next_button.clicked.connect(self.show_next_image)
 
     def open_annotation_file(self):
-        """Открывает диалог выбора файла и создает итератор."""
+        """
+        Открывает диалог выбора файла и создает итератор.
+        """
         filepath, _ = QFileDialog.getOpenFileName(self, "Выбрать файл аннотации", "", "CSV файлы (*.csv)")
 
         if filepath:
             try:
                 self.iterator = ImageIterator(filepath)
                 self.next_button.setEnabled(True)
-                self.image_label.setText("Файл загружен. Нажмите 'Следующее изображение'.")
+                self.current_pixmap = None
+                self.image_label.setText("Файл загружен. Нажмите 'Следующее изображение'")
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить итератор: {e}")
 
     def show_next_image(self):
-        """Загружает и отображает следующее изображение из итератора."""
+        """
+        Загружает и отображает следующее изображение из итератора.
+        """
         if self.iterator is None:
             return
 
         try:
             image_path = next(self.iterator)
-            pixmap = QPixmap(image_path)
-            scaled_pixmap = pixmap.scaled(self.image_label.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            self.image_label.setPixmap(scaled_pixmap)
+            self.current_pixmap = QPixmap(image_path)
+            self.update_image_display()
 
         except StopIteration:
-            self.image_label.setText("Изображения закончились!")
+            self.image_label.setText("Изображения закончились! Выберите новый файл.")
             self.next_button.setEnabled(False)
+            self.current_pixmap = None
             QMessageBox.information(self, "Завершено", "Вы просмотрели все изображения.")
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить изображение: {e}")
+
+    def update_image_display(self):
+        """
+        Масштабирует и отображает текущее изображение.
+        """
+        if self.current_pixmap and not self.current_pixmap.isNull():
+            scaled_pixmap = self.current_pixmap.scaled(
+                self.image_label.size(),
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+            self.image_label.setPixmap(scaled_pixmap)
+        else:
+            self.image_label.clear()
+            if self.iterator and self.next_button.isEnabled():
+                self.image_label.setText("Нажмите 'Следующее изображение'.")
+            elif self.iterator and not self.next_button.isEnabled():
+                self.image_label.setText("Изображения закончились! Выберите новый файл.")
+            else:
+                self.image_label.setText(self.DEFAULT_LABEL_TEXT)
+
+    def resizeEvent(self, event: QResizeEvent):
+        """
+        Этот метод автоматически вызывается при изменении размера окна.
+        """
+        self.update_image_display()
+        super().resizeEvent(event)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
