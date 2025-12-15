@@ -1,4 +1,5 @@
 import sys
+from typing import Optional
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
@@ -9,17 +10,23 @@ from iterator import ImageIterator
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    """
+
+    """
+    ZOOM_STEP = 1.25
+
+    def __init__(self) -> None:
+        """
+        Инициализирует главное окно, создает виджеты и их компоновку.
+        """
         super().__init__()
 
         self.setWindowTitle("Просмотрщик изображений")
         self.resize(800, 600)
 
-        self.iterator = None
-        self.current_pixmap = None
-
-        self.zoom_factor = 1.0
-        self.ZOOM_STEP = 1.25
+        self.iterator: Optional[ImageIterator] = None
+        self.current_pixmap: Optional[QPixmap] = None
+        self.zoom_factor: float = 1.0
 
         self.image_label = QLabel("Выберите файл аннотации, чтобы начать", self)
         self.image_label.setAlignment(Qt.AlignCenter)
@@ -57,7 +64,7 @@ class MainWindow(QMainWindow):
         self.zoom_in_button.clicked.connect(self.zoom_in)
         self.zoom_out_button.clicked.connect(self.zoom_out)
 
-    def open_annotation_file(self):
+    def open_annotation_file(self) -> None:
         """
         Открывает диалог выбора файла и создает итератор.
         """
@@ -72,7 +79,7 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить итератор: {e}")
 
-    def show_next_image(self):
+    def show_next_image(self) -> None:
         """
         Загружает и отображает следующее изображение из итератора.
         """
@@ -115,21 +122,21 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Ошибка", f"Не удалось загрузить изображение: {e}")
 
-    def zoom_in(self):
+    def zoom_in(self) -> None:
         """
         Увеличивает масштаб изображения.
         """
         self.zoom_factor *= self.ZOOM_STEP
         self.update_image_display()
 
-    def zoom_out(self):
+    def zoom_out(self) -> None:
         """
         Уменьшает масштаб изображения.
         """
         self.zoom_factor /= self.ZOOM_STEP
         self.update_image_display()
 
-    def update_image_display(self):
+    def update_image_display(self) -> None:
         """
         Масштабирует и отображает текущее изображение.
         """
@@ -147,8 +154,15 @@ class MainWindow(QMainWindow):
             self.image_label.adjustSize()
 
 
-if __name__ == '__main__':
+def main() -> None:
+    """
+    Инициализирует и запускает приложение.
+    """
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
